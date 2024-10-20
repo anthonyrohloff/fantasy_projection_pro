@@ -201,11 +201,10 @@ def get_roster(league_id, user_id):
             return roster_info
 
 
-def compare_projections(username, year, league_name):
+def view_projections(username, year, league_name):
+
     user_info = get_user(username)
-
     league_info = get_league(league_name, user_info['user_id'], year)
-
     roster = get_roster(league_info['league_id'], user_info['user_id'])
 
     projections = []
@@ -224,4 +223,5 @@ def compare_projections(username, year, league_name):
     df = pd.DataFrame(projections)
     print(df)
 
-compare_projections("cgtrain", 2024, "Dyna$ty")
+
+view_projections("anthonyrohloff", 2024, "Dyna$ty")
