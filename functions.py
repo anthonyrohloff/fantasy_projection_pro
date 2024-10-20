@@ -14,6 +14,13 @@ def get_nfl_state():
 
 
 def get_player_id(first_name, last_name):
+    '''Gets player informaton from database
+    
+    Arguments:
+    first_name [string] -- player first name
+    last_name [strong] -- player last name
+    '''
+
     connection = sqlite3.connect('nfl_players.db')
     cursor = connection.cursor()
     cursor.execute('''SELECT * FROM PLAYERS WHERE first_name = ? AND last_name = ?''', (first_name, last_name,))
@@ -24,7 +31,7 @@ def get_player_id(first_name, last_name):
         print(row)
 
 
-def get_projection(player_id, year):
+def get_projection(player_id, year, proj_week):
     '''Returns projection data for a player in the specified year
     
     Arguments:
@@ -41,7 +48,7 @@ def get_projection(player_id, year):
 
     player_name = player[0][1] + ' ' + player[0][2]
 
-    state = get_nfl_state()
+    # state = get_nfl_state()
 
     # Query api to get projections for the specified year
     response = requests.get(f"https://api.sleeper.com/projections/nfl/player/{player_id}?season={year}&season_type=regular&grouping=week")
@@ -50,7 +57,7 @@ def get_projection(player_id, year):
     # Sort the dictionary by the integer value of the week
     pts_ppr_by_week = {}
     for week, data in sorted(projection.items(), key=lambda x: int(x[0])):
-        if data and 'stats' in data and int(week) == state['week']:
+        if data and 'stats' in data and week == proj_week:
             pts_ppr_by_week[week] = data['stats'].get('pts_ppr', None)
     
     # Create dict with all information to return
@@ -201,7 +208,14 @@ def get_roster(league_id, user_id):
             return roster_info
 
 
-def view_projections(username, year, league_name):
+def view_projections(username, year, week, league_name):
+    '''View projections for current week on a team in any league
+    
+    Arguments:
+    username [string] -- sleeper username
+    year [string] -- year of season to get projections for
+    league_name [string] -- name of sleeper league
+    '''
 
     user_info = get_user(username)
     league_info = get_league(league_name, user_info['user_id'], year)
@@ -209,7 +223,7 @@ def view_projections(username, year, league_name):
 
     projections = []
     for player in roster['players']:
-        projections.append(get_projection(player, '2024'))
+        projections.append(get_projection(player, year, week))
 
         if player in roster['starters']:
             projections[-1]['status'] = "starter"
@@ -224,4 +238,4 @@ def view_projections(username, year, league_name):
     print(df)
 
 
-view_projections("anthonyrohloff", 2024, "Dyna$ty")
+view_projections("anthonyrohloff", '2023', '3', "Dyna$ty")
