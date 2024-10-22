@@ -1,18 +1,21 @@
 # Python 3.13.0
 # Standard Libraries
-import json
 import sqlite3
 
 # Third-party Libraries
 import pandas as pd
 import requests
 
-# TODO: update comments for whole script
-
 class SleeperProjectionGetter():
-    '''Objects of the SleeperAPI class will be created
-    when a new query is run to get projection information'''
     def __init__(self, username, league_name, year, week):
+        '''Constructor
+        
+        Arguments:
+        username [string] -- sleeper username
+        league_name [string] -- sleeper league name
+        year [string] -- year to search in
+        week [string] -- week to search for
+        '''
         self.username = username
         self.league_name = league_name
         self.year = year
@@ -87,11 +90,7 @@ class SleeperProjectionGetter():
 
 
     def get_user(self):
-        '''Returns username, display_name, and user_id
-        
-        Argument:
-        username [string] -- username (NOT display_name)
-        '''
+        '''Returns username, display_name, and user_id in key_user_info dict'''
 
         response = requests.get(f"https://api.sleeper.app/v1/user/{self.username}")
         user_info = response.json()
@@ -109,9 +108,7 @@ class SleeperProjectionGetter():
         '''Returns list league information dicts
         
         Arguments:
-        league_name [string] -- name of league
         user_id [string] -- user_id from get_user function
-        year [string] -- year to search for
         '''
         
         response = requests.get(f"https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/{self.year}")
@@ -137,6 +134,7 @@ class SleeperProjectionGetter():
         
         Arguments:
         league_id [string] -- league_id from get_leagues
+        user_id [string] -- user_id from get_user
         '''
 
         response = requests.get(f"https://api.sleeper.app/v1/league/{league_id}/rosters")
@@ -168,7 +166,6 @@ class SleeperProjectionGetter():
         
         Arguments:
         player_id [string] -- player id number in database
-        year [string] -- year to get projections from
         '''
 
         # Connect to db to get player name from player_id
@@ -202,13 +199,7 @@ class SleeperProjectionGetter():
 
 
     def view_projections(self):
-        '''View projections for current week on a team in any league
-        
-        Arguments:
-        username [string] -- sleeper username
-        year [string] -- year of season to get projections for
-        league_name [string] -- name of sleeper league
-        '''
+        '''View projections for current week on a team in any league'''
 
         user_info = self.get_user()
         league_info = self.get_league(user_info['user_id'])
