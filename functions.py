@@ -4,93 +4,6 @@ import sqlite3
 import pandas as pd
 
 
-def get_nfl_state():
-    '''Returns NFL state'''
-
-    response = requests.get(f"https://api.sleeper.app/v1/state/nfl")
-    state = response.json()  
-
-    return state     
-
-
-def get_player_id(first_name, last_name):
-    '''Gets player informaton from database
-    
-    Arguments:
-    first_name [string] -- player first name
-    last_name [strong] -- player last name
-    '''
-
-    connection = sqlite3.connect('nfl_players.db')
-    cursor = connection.cursor()
-    cursor.execute('''SELECT * FROM PLAYERS WHERE first_name = ? AND last_name = ?''', (first_name, last_name,))
-    rows = cursor.fetchall()
-    connection.close()
-
-    for row in rows:
-        print(row)
-
-
-def get_projection(player_id, year, proj_week):
-    '''Returns projection data for a player in the specified year
-    
-    Arguments:
-    player_id [string] -- player id number in database
-    year [string] -- year to get projections from
-    '''
-
-    # Connect to db to get player name from player_id
-    connection = sqlite3.connect('nfl_players.db')
-    cursor = connection.cursor()
-    cursor.execute('''SELECT * FROM PLAYERS WHERE player_id = ?''', (player_id,))
-    player = cursor.fetchall()
-    connection.close()
-
-    player_name = player[0][1] + ' ' + player[0][2]
-
-    # state = get_nfl_state()
-
-    # Query api to get projections for the specified year
-    response = requests.get(f"https://api.sleeper.com/projections/nfl/player/{player_id}?season={year}&season_type=regular&grouping=week")
-    projection = response.json()   
-
-    # Sort the dictionary by the integer value of the week
-    pts_ppr_by_week = {}
-    for week, data in sorted(projection.items(), key=lambda x: int(x[0])):
-        if data and 'stats' in data and week == proj_week:
-            pts_ppr_by_week[week] = data['stats'].get('pts_ppr', None)
-    
-    # Create dict with all information to return
-    projection = {
-        'player_id': player_id,
-        'name': player_name,
-        'projection': pts_ppr_by_week
-    }
-
-    return projection
-
-
-def get_stats(player_id, year):
-    '''Sends stats data for a player in the specified year
-    
-    Arguments:
-    player_id [string] -- player id number in database
-    year [string] -- year to get projections from
-    '''
-
-    response = requests.get(f"https://api.sleeper.com/stats/nfl/player/{player_id}?season={year}&season_type=regular&grouping=week")
-    stats = response.json()
-
-    # Sort the dictionary by the integer value of the week
-    stats_ppr_by_week = {}
-    for week, data in sorted(stats.items(), key=lambda x: int(x[0])):
-        if data and 'stats' in data:
-            stats_ppr_by_week[week] = data['stats'].get('pts_ppr', None)
-
-    with open('stats.json', 'w') as json_file:
-        json.dump(stats_ppr_by_week, json_file, indent=4)
-
-
 # TODO 1
 def update_db():
     '''Fetch player data from the Sleeper API'''
@@ -139,6 +52,24 @@ def update_db():
 
     conn.commit()
     conn.close()
+
+
+def get_player_id(first_name, last_name):
+    '''Gets player informaton from database
+    
+    Arguments:
+    first_name [string] -- player first name
+    last_name [strong] -- player last name
+    '''
+
+    connection = sqlite3.connect('nfl_players.db')
+    cursor = connection.cursor()
+    cursor.execute('''SELECT * FROM PLAYERS WHERE first_name = ? AND last_name = ?''', (first_name, last_name,))
+    rows = cursor.fetchall()
+    connection.close()
+
+    for row in rows:
+        print(row)
 
 
 def get_user(username):
@@ -208,6 +139,44 @@ def get_roster(league_id, user_id):
             return roster_info
 
 
+def get_projection(player_id, year, proj_week):
+    '''Returns projection data for a player in the specified year
+    
+    Arguments:
+    player_id [string] -- player id number in database
+    year [string] -- year to get projections from
+    '''
+
+    # Connect to db to get player name from player_id
+    connection = sqlite3.connect('nfl_players.db')
+    cursor = connection.cursor()
+    cursor.execute('''SELECT * FROM PLAYERS WHERE player_id = ?''', (player_id,))
+    player = cursor.fetchall()
+    connection.close()
+
+    player_name = player[0][1] + ' ' + player[0][2]
+
+
+    # Query api to get projections for the specified year
+    response = requests.get(f"https://api.sleeper.com/projections/nfl/player/{player_id}?season={year}&season_type=regular&grouping=week")
+    projection = response.json()   
+
+    # Sort the dictionary by the integer value of the week
+    pts_ppr_by_week = {}
+    for week, data in sorted(projection.items(), key=lambda x: int(x[0])):
+        if data and 'stats' in data and week == proj_week:
+            pts_ppr_by_week[week] = data['stats'].get('pts_ppr', None)
+    
+    # Create dict with all information to return
+    projection = {
+        'player_id': player_id,
+        'name': player_name,
+        'projection': pts_ppr_by_week
+    }
+
+    return projection
+
+
 def view_projections(username, year, week, league_name):
     '''View projections for current week on a team in any league
     
@@ -239,3 +208,34 @@ def view_projections(username, year, week, league_name):
 
 
 view_projections("anthonyrohloff", '2023', '3', "Dyna$ty")
+
+
+
+
+# def get_stats(player_id, year):
+#     '''Sends stats data for a player in the specified year
+    
+#     Arguments:
+#     player_id [string] -- player id number in database
+#     year [string] -- year to get projections from
+#     '''
+
+#     response = requests.get(f"https://api.sleeper.com/stats/nfl/player/{player_id}?season={year}&season_type=regular&grouping=week")
+#     stats = response.json()
+
+#     # Sort the dictionary by the integer value of the week
+#     stats_ppr_by_week = {}
+#     for week, data in sorted(stats.items(), key=lambda x: int(x[0])):
+#         if data and 'stats' in data:
+#             stats_ppr_by_week[week] = data['stats'].get('pts_ppr', None)
+
+#     with open('stats.json', 'w') as json_file:
+#         json.dump(stats_ppr_by_week, json_file, indent=4)
+
+# def get_nfl_state():
+#     '''Returns NFL state'''
+
+#     response = requests.get(f"https://api.sleeper.app/v1/state/nfl")
+#     state = response.json()  
+
+#     return state     
