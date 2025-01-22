@@ -21,6 +21,9 @@ class SleeperProjectionGetter():
         self.league_name = league_name
         self.year = year
         self.week = week
+
+        self.user_id = self.get_user()["user_id"]
+        self.league_id = self.get_league_settings()["league_id"]
     
 
     def update_db(self):
@@ -45,7 +48,8 @@ class SleeperProjectionGetter():
                 height TEXT,
                 weight TEXT,
                 college TEXT,
-                years_exp INTEGER
+                years_exp INTEGER,
+                projection TEXT
             )
         ''')
 
@@ -105,13 +109,15 @@ class SleeperProjectionGetter():
         return key_user_info
 
 
-    def get_league(self, user_id):
+    def get_league_settings(self):
         '''Returns list league information dicts
         
         Arguments:
         user_id [string] -- user_id from get_user function
         '''
         
+        user_id = self.get_user()["user_id"]
+
         response = requests.get(f"https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/{self.year}")
         leagues = response.json()
 
@@ -127,18 +133,39 @@ class SleeperProjectionGetter():
                     'league_id': league.get('league_id')
                 }
 
-        return league_info
-
-
-    def get_roster(self, league_id, user_id):
-        '''Returns roster in a league for a user
+            return league_info
         
-        Arguments:
-        league_id [string] -- league_id from get_leagues
-        user_id [string] -- user_id from get_user
-        '''
+        return "league not found"
 
-        response = requests.get(f"https://api.sleeper.app/v1/league/{league_id}/rosters")
+
+    def get_league_rosters(self):
+        '''Returns roster in a league for a user'''
+
+        response = requests.get(f"https://api.sleeper.app/v1/league/{self.league_id}/rosters")
+        rosters = response.json()
+
+        # Nested for-loop:
+        # 1. Get each owner's user_id
+        # 2. Use that user_id to get their roster
+        # 3. Loop through the roster and get projections for each player
+        # 4. Return result in a dictionary
+        roster_info = {}
+        for roster in rosters:
+            players = self.get_user_roster(roster["owner_id"])["players"]
+
+            projections = []
+            for player in players:
+                projections.append(self.get_projection(player))
+
+            roster_info[roster["owner_id"]]= [roster['roster_id'], projections]
+
+        return roster_info
+
+
+    def get_user_roster(self, user_id):
+        '''Returns roster in a league for a user'''
+
+        response = requests.get(f"https://api.sleeper.app/v1/league/{self.league_id}/rosters")
         rosters = response.json()
 
         roster_info = {}
@@ -150,14 +177,14 @@ class SleeperProjectionGetter():
                 break 
 
         # Need to get matchup info to find starters/bench
-        response = requests.get(f"https://api.sleeper.app/v1/league/{league_id}/matchups/{self.week}")
+        response = requests.get(f"https://api.sleeper.app/v1/league/{self.league_id}/matchups/{self.week}")
         matchup = response.json()
 
         for roster in matchup:
             if roster['roster_id'] == roster_info['roster_id']:
                 roster_info = {
-                    'players': roster['players'],
-                    'starters': roster['starters']             
+                    'players': roster['players']
+                    # 'starters': roster['starters']             
                 }
                 break 
         return roster_info
@@ -221,5 +248,3 @@ class SleeperProjectionGetter():
 
 query = SleeperProjectionGetter(username="anthonyrohloff", league_name="Dyna$ty", 
                                 year="2023", week="6")
-
-query.view_projections()
