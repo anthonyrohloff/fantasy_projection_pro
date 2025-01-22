@@ -6,6 +6,7 @@ import sqlite3
 import pandas as pd
 import requests
 
+
 class SleeperProjectionGetter():
     def __init__(self, username, league_name, year, week):
         '''Constructor
@@ -21,7 +22,7 @@ class SleeperProjectionGetter():
         self.year = year
         self.week = week
     
-    # TODO 1
+
     def update_db(self):
         '''Fetch player data from the Sleeper API'''
 
@@ -160,6 +161,7 @@ class SleeperProjectionGetter():
                 }
                 break 
         return roster_info
+
 
     def get_projection(self, player_id):
         '''Returns projection data for a player in the specified year
