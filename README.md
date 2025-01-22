@@ -6,3 +6,10 @@ Make the lines even, no edge to "the house" so people can bet amongst their leag
 
 Create account system so people can make bets, then login later to see if they hit.
 Nullify bets if stupid trade happens (how to determine this...)
+
+MVP:
+- [ ] Pull projections from sleeper for each team
+- [ ] Process league's season projections with league settings
+- [ ] Run a monte carlo simulation (10000+ sims)
+- [ ] Calculate betting lines (sims making playoffs / total sims), (sims winning ship / total sims), etc...
+- [ ] Display results on website
